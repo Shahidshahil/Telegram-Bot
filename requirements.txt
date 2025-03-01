@@ -1,0 +1,9 @@
+aiogram
+pyrogram
+moviepy
+telebot
+pillow
+opencv-python
+numpy
+requests
+pytesseract
