@@ -18,9 +18,12 @@ jobs:
         with:
           python-version: "3.9"
 
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          pip install --upgrade pyrogram tgcrypto
           pip install -r requirements.txt
 
       - name: Run bot
