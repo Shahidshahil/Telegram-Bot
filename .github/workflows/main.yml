@@ -1,5 +1,4 @@
 name: Run Telegram Bot
-
 on:
   schedule:
     - cron: "0 * * * *"  # Runs every hour
