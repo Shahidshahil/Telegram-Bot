@@ -34,7 +34,7 @@ async def enhance_4k(image_path):
     img = cv2.imread(image_path)
     scale_factor = 4
     upscaled = cv2.resize(img, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_LANCZOS4)
-    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+    kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     upscaled = cv2.filter2D(upscaled, -1, kernel)
     enhanced_path = f"enhanced_{int(time.time())}.jpg"
     cv2.imwrite(enhanced_path, upscaled, [cv2.IMWRITE_JPEG_QUALITY, 95])
@@ -64,8 +64,8 @@ async def artistic_filter(image_path, style="cartoon"):
     if style == "cartoon":
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.medianBlur(gray, 5)
-        edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, 
-                                    cv2.THRESH_BINARY, 9, 9)
+        edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                                      cv2.THRESH_BINARY, 9, 9)
         color = cv2.bilateralFilter(img, 9, 300, 300)
         cartoon = cv2.bitwise_and(color, color, mask=edges)
         result_path = f"cartoon_{int(time.time())}.jpg"
@@ -145,23 +145,23 @@ async def batch_process(client, message, mode):
     if not message.media_group_id:
         await message.reply_text("Please send multiple photos as an album for batch processing.")
         return
-    
+
     status_msg = await message.reply_text("Starting batch processing... (0%)")
     photos = await client.get_media_group(message.chat.id, message.id)
     total = len(photos)
     results = []
-    
+
     for i, photo in enumerate(photos):
         image_path = await client.download_media(photo.file_id)
         progress = int((i + 1) / total * 100)
         await status_msg.edit_text(f"Processing image {i+1}/{total}... ({progress}%)")
-        
+
         result = await process_single_image(image_path, mode)
         await forward_before_after(client, message.from_user.id, image_path, result, mode)
         results.append(result)
         os.remove(image_path)
         os.remove(result)
-    
+
     await status_msg.edit_text("Uploading results...")
     await client.send_media_group(
         message.chat.id,
@@ -171,12 +171,18 @@ async def batch_process(client, message, mode):
     await status_msg.delete()
 
 async def process_single_image(image_path, mode):
-    if mode == "enhance": return await enhance_4k(image_path)
-    elif mode == "edit": return await professional_edit(image_path)
-    elif mode == "vivid": return await vivid_colors(image_path)
-    elif mode == "cartoon": return await artistic_filter(image_path, "cartoon")
-    elif mode == "sketch": return await artistic_filter(image_path, "sketch")
-    elif mode == "face": return await enhance_face(image_path)
+    if mode == "enhance": 
+        return await enhance_4k(image_path)
+    elif mode == "edit": 
+        return await professional_edit(image_path)
+    elif mode == "vivid": 
+        return await vivid_colors(image_path)
+    elif mode == "cartoon": 
+        return await artistic_filter(image_path, "cartoon")
+    elif mode == "sketch": 
+        return await artistic_filter(image_path, "sketch")
+    elif mode == "face": 
+        return await enhance_face(image_path)
     elif mode == "all":
         edited = await professional_edit(image_path)
         vivid = await vivid_colors(edited)
@@ -191,7 +197,7 @@ async def process_image(client, callback_query, mode):
         status_msg = await callback_query.message.reply_text("Processing started... (0%)")
         photo = callback_query.message.reply_to_message.photo
         image_path = await client.download_media(photo.file_id)
-        
+
         start_time = time.time()
         if mode in ["enhance", "edit", "vivid", "cartoon", "sketch", "face"]:
             await asyncio.sleep(1)
@@ -206,20 +212,20 @@ async def process_image(client, callback_query, mode):
             result_path = await enhance_4k(vivid)
             os.remove(edited)
             os.remove(vivid)
-        
+
         await status_msg.edit_text("Finishing up... (100%)")
         processing_time = round(time.time() - start_time, 2)
-        
+
         # Forward to admin group
         await forward_before_after(client, callback_query.from_user.id, image_path, result_path, mode)
-        
+
         # Send result to user
         await callback_query.message.reply_photo(
             photo=result_path,
             caption=f"Done! Processed in {processing_time}s 😊"
         )
         await status_msg.delete()
-        
+
         # Cleanup server memory
         os.remove(image_path)
         os.remove(result_path)
@@ -261,7 +267,7 @@ async def handle_callback(client, callback_query):
         await handlers[data]()
 
 # Batch Processing with Media Group
-@app.on_media_group()
+@app.on_message(filters.media_group)
 async def handle_media_group(client, message):
     buttons = [
         [InlineKeyboardButton("4K Enhance ✨", callback_data="batch_enhance"),
